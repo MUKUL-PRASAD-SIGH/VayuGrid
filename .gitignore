@@ -17,3 +17,16 @@ data/
 Varshith_Workstream_README.md
 
 .env
+
+# Python artifacts
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Local virtual environments
+.venv/
+venv/
+
+# Notebook/editor artifacts
+.ipynb_checkpoints/
+.DS_Store
