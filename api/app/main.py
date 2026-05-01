@@ -19,7 +19,7 @@ from .security import decode_access_token
 app = FastAPI(title="VayuGrid API", version="0.1.0")
 
 app.state.limiter = limiter
-app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)  # type: ignore[arg-type]
 app.add_middleware(SlowAPIMiddleware)
 app.add_middleware(
     CORSMiddleware,
@@ -111,6 +111,11 @@ async def ws_stream(websocket: WebSocket) -> None:
             await asyncio.sleep(5)
     except WebSocketDisconnect:
         return
+
+
+@app.on_event("startup")
+def startup() -> None:
+    pool.open(wait=True, timeout=30)
 
 
 @app.on_event("shutdown")

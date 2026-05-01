@@ -3,7 +3,7 @@ from __future__ import annotations
 import math
 from datetime import datetime, timedelta, timezone
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 
 from ..config import settings
 from ..db import fetch_all, fetch_one
@@ -38,7 +38,9 @@ def _overload_probability(loading_pu: float | None) -> float:
 
 @router.get("/dashboard/operator/overview")
 @limiter.limit("100/minute")
-def operator_overview(_: UserClaims = Depends(require_roles(["operator"]))) -> dict:
+def operator_overview(
+    request: Request, _: UserClaims = Depends(require_roles(["operator"]))
+) -> dict:
     latest_nodes = fetch_all(
         """
         SELECT DISTINCT ON (node_id)
@@ -62,13 +64,13 @@ def operator_overview(_: UserClaims = Depends(require_roles(["operator"]))) -> d
                 "voltage_pu": row.get("voltage_pu"),
                 "stress_level": level,
                 "stress_score": round(score, 2),
-                "last_seen": row.get("ts").isoformat() if row.get("ts") else None,
+                "last_seen": row["ts"].isoformat() if row.get("ts") is not None else None,
             }
         )
 
     duck_rows = fetch_all(
         """
-        SELECT time_bucket('1 hour', ts) AS bucket, SUM(net_grid_kw) AS net_grid_kw
+        SELECT date_trunc('hour', ts) AS bucket, SUM(net_grid_kw) AS net_grid_kw
         FROM node_telemetry
         WHERE ts >= now() - interval '48 hours'
         GROUP BY bucket
@@ -156,7 +158,7 @@ def operator_overview(_: UserClaims = Depends(require_roles(["operator"]))) -> d
 
     peak_rows = fetch_all(
         """
-        SELECT time_bucket('1 hour', ts) AS bucket, SUM(net_grid_kw) AS net_grid_kw
+        SELECT date_trunc('hour', ts) AS bucket, SUM(net_grid_kw) AS net_grid_kw
         FROM node_telemetry
         WHERE ts >= now() - interval '48 hours'
         GROUP BY bucket
@@ -203,7 +205,7 @@ def operator_overview(_: UserClaims = Depends(require_roles(["operator"]))) -> d
             "curtailment_pct": curtailment_pct,
             "peak_reduction_pct": peak_reduction_pct,
             "transformer_aging_rate": (
-                round(transformer_metrics.get("avg_aging"), 4)
+                round(float(transformer_metrics["avg_aging"]), 4)
                 if transformer_metrics and transformer_metrics.get("avg_aging") is not None
                 else None
             ),
@@ -221,7 +223,9 @@ def operator_overview(_: UserClaims = Depends(require_roles(["operator"]))) -> d
 @router.get("/dashboard/homeowner/{node_id}/summary")
 @limiter.limit("100/minute")
 def homeowner_summary(
-    node_id: int, user: UserClaims = Depends(require_roles(["homeowner", "operator"]))
+    request: Request,
+    node_id: int,
+    user: UserClaims = Depends(require_roles(["homeowner", "operator"])),
 ) -> dict:
     if user.role == "homeowner" and user.node_id and user.node_id != node_id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
@@ -275,7 +279,7 @@ def homeowner_summary(
 
     market_rows = fetch_all(
         """
-        SELECT time_bucket('10 minutes', ts) AS bucket,
+        SELECT to_timestamp(floor(extract(epoch from ts) / 600) * 600) AT TIME ZONE 'UTC' AS bucket,
                AVG(cleared_price_inr_per_kwh) AS avg_price
         FROM trade_records
         WHERE ts >= now() - interval '1 hour'
@@ -335,7 +339,9 @@ def homeowner_summary(
 
 @router.get("/dashboard/community/summary")
 @limiter.limit("100/minute")
-def community_summary(_: UserClaims = Depends(require_roles(["community", "operator"]))) -> dict:
+def community_summary(
+    request: Request, _: UserClaims = Depends(require_roles(["community", "operator"]))
+) -> dict:
     battery_totals = fetch_one(
         """
         SELECT SUM(battery_soc_kwh) AS total_battery_soc_kwh
@@ -350,7 +356,7 @@ def community_summary(_: UserClaims = Depends(require_roles(["community", "opera
         """
         SELECT AVG(total_load_kw) AS avg_load_kw
         FROM (
-            SELECT time_bucket('5 minutes', ts) AS bucket,
+            SELECT to_timestamp(floor(extract(epoch from ts) / 300) * 300) AT TIME ZONE 'UTC' AS bucket,
                    SUM(household_load_kw) AS total_load_kw
             FROM node_telemetry
             WHERE ts >= now() - interval '1 hour'
@@ -398,9 +404,9 @@ def community_summary(_: UserClaims = Depends(require_roles(["community", "opera
     return {
         "backup_hours": backup_hours,
         "community_savings": {
-            "today_inr": round(savings.get("today_savings", 0), 2),
-            "month_inr": round(savings.get("month_savings", 0), 2),
-            "total_inr": round(savings.get("total_savings", 0), 2),
+            "today_inr": round(savings.get("today_savings") or 0, 2),
+            "month_inr": round(savings.get("month_savings") or 0, 2),
+            "total_inr": round(savings.get("total_savings") or 0, 2),
         },
         "fairness_allocation": fairness,
     }

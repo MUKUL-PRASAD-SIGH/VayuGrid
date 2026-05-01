@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import secrets
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 
 from ..db import execute
 from ..rate_limit import limiter
@@ -13,7 +13,9 @@ router = APIRouter(tags=["admin"])
 
 @router.post("/admin/nodes/{node_id}/api-key")
 @limiter.limit("100/minute")
-def create_node_api_key(node_id: int, _: UserClaims = Depends(require_roles(["operator"]))) -> dict:
+def create_node_api_key(
+    request: Request, node_id: int, _: UserClaims = Depends(require_roles(["operator"]))
+) -> dict:
     api_key = secrets.token_urlsafe(32)
     key_hash = hash_api_key(api_key)
     execute(

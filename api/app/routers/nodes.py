@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import List
 
-from fastapi import APIRouter, Depends, Header, HTTPException, status
+from fastapi import APIRouter, Depends, Header, HTTPException, Request, status
 from psycopg.types.json import Json
 
 from ..db import execute_many, fetch_one
@@ -31,6 +31,7 @@ def get_node_id_from_api_key(
 @router.post("/nodes/telemetry")
 @limiter.limit("1000/minute")
 def ingest_telemetry(
+    request: Request,
     payload: List[TelemetryIn],
     node_id: int = Depends(get_node_id_from_api_key),
 ) -> dict:
@@ -74,6 +75,7 @@ def ingest_telemetry(
 @router.post("/nodes/transformer-readings")
 @limiter.limit("1000/minute")
 def ingest_transformer_readings(
+    request: Request,
     payload: List[TransformerReadingIn],
     _: int = Depends(get_node_id_from_api_key),
 ) -> dict:
@@ -110,6 +112,7 @@ def ingest_transformer_readings(
 @router.post("/nodes/trades")
 @limiter.limit("1000/minute")
 def ingest_trades(
+    request: Request,
     payload: List[TradeRecordIn],
     _: int = Depends(get_node_id_from_api_key),
 ) -> dict:

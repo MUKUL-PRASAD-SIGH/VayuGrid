@@ -1,26 +1,28 @@
 from __future__ import annotations
 
-from typing import Any, Iterable, Mapping, Sequence
+from typing import TYPE_CHECKING, Any, Iterable, Mapping, Sequence
 
 from psycopg.rows import dict_row
 from psycopg_pool import ConnectionPool
 
 from .config import settings
 
-pool = ConnectionPool(conninfo=settings.database_url, max_size=10, kwargs={"autocommit": True})
+pool = ConnectionPool(
+    conninfo=settings.database_url, max_size=10, open=False, kwargs={"autocommit": True}
+)
 
 
-def fetch_all(query: str, params: Mapping[str, Any] | Sequence[Any] | None = None) -> list[dict]:
+def fetch_all(query: str, params: Mapping[str, Any] | Sequence[Any] | None = None) -> list[dict]:  # type: ignore[type-var]
     with pool.connection() as conn:
         with conn.cursor(row_factory=dict_row) as cur:
-            cur.execute(query, params)
+            cur.execute(query, params)  # type: ignore[arg-type]
             return list(cur.fetchall())
 
 
-def fetch_one(query: str, params: Mapping[str, Any] | Sequence[Any] | None = None) -> dict | None:
+def fetch_one(query: str, params: Mapping[str, Any] | Sequence[Any] | None = None) -> dict | None:  # type: ignore[type-var]
     with pool.connection() as conn:
         with conn.cursor(row_factory=dict_row) as cur:
-            cur.execute(query, params)
+            cur.execute(query, params)  # type: ignore[arg-type]
             result = cur.fetchone()
             return dict(result) if result else None
 
@@ -28,10 +30,10 @@ def fetch_one(query: str, params: Mapping[str, Any] | Sequence[Any] | None = Non
 def execute(query: str, params: Mapping[str, Any] | Sequence[Any] | None = None) -> None:
     with pool.connection() as conn:
         with conn.cursor() as cur:
-            cur.execute(query, params)
+            cur.execute(query, params)  # type: ignore[arg-type]
 
 
 def execute_many(query: str, rows: Iterable[Sequence[Any]]) -> None:
     with pool.connection() as conn:
         with conn.cursor() as cur:
-            cur.executemany(query, rows)
+            cur.executemany(query, rows)  # type: ignore[arg-type]

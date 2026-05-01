@@ -3,7 +3,10 @@ FROM python:3.11-slim
 WORKDIR /app
 ENV PYTHONUNBUFFERED=1
 
-COPY pyproject.toml ./
+COPY pyproject.toml README.md ./
+COPY ai ./ai
+COPY api ./api
+COPY simulator ./simulator
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -e .
 

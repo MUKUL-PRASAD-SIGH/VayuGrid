@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import uuid
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from psycopg.types.json import Json
 
 from ..db import execute
@@ -15,7 +15,9 @@ router = APIRouter(tags=["signals"])
 
 @router.post("/signals")
 @limiter.limit("100/minute")
-def create_signal(payload: SignalIn, _: UserClaims = Depends(require_roles(["operator"]))) -> dict:
+def create_signal(
+    request: Request, payload: SignalIn, _: UserClaims = Depends(require_roles(["operator"]))
+) -> dict:
     signal_id = str(uuid.uuid4())
     execute(
         """

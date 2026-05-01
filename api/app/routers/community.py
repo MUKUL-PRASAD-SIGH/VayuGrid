@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import uuid
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from psycopg.types.json import Json
 
 from ..db import execute
@@ -16,6 +16,7 @@ router = APIRouter(tags=["community"])
 @router.post("/community/critical-load")
 @limiter.limit("100/minute")
 def flag_critical_load(
+    request: Request,
     payload: CriticalLoadFlagIn,
     _: UserClaims = Depends(require_roles(["operator", "community", "homeowner"])),
 ) -> dict:

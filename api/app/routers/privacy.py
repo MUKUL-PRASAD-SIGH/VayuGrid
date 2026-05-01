@@ -15,7 +15,7 @@ router = APIRouter(tags=["privacy"])
 
 @router.get("/privacy/consent/{node_id}")
 @limiter.limit("100/minute")
-def get_consent(node_id: int, _: UserClaims = Depends(require_roles(["operator", "homeowner"]))):
+def get_consent(request: Request, node_id: int, _: UserClaims = Depends(require_roles(["operator", "homeowner"]))):
     record = fetch_one(
         """
         SELECT node_id, consented, consent_version, categories, updated_at
@@ -61,7 +61,7 @@ def set_consent(
 
 @router.get("/privacy/export/{node_id}")
 @limiter.limit("20/minute")
-def export_household_data(
+def export_household_data(request: Request,
     node_id: int, _: UserClaims = Depends(require_roles(["operator", "homeowner"]))
 ) -> dict:
     telemetry = fetch_all(
@@ -96,7 +96,7 @@ def export_household_data(
 
 @router.post("/privacy/delete/{node_id}")
 @limiter.limit("20/minute")
-def request_deletion(
+def request_deletion(request: Request,
     node_id: int, _: UserClaims = Depends(require_roles(["operator", "homeowner"]))
 ) -> dict:
     request_id = f"del_{node_id}_{int(datetime.now(timezone.utc).timestamp())}"
