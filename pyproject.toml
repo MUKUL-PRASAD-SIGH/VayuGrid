@@ -22,6 +22,9 @@ dependencies = [
   "psycopg-pool>=3.2,<4",
   "aio-pika>=9.4,<10",
   "redis>=5.0,<6",
+  "scikit-learn>=1.5,<2",
+  "hvac>=2.3,<3",
+  "apscheduler>=3.10,<4",
 ]
 
 [project.optional-dependencies]
@@ -30,10 +33,27 @@ dev = [
   "pytest>=8.2,<9",
   "ruff>=0.5,<0.13",
 ]
+ai = [
+  "torch>=2.3,<3",
+  "gymnasium>=0.29,<1",
+  "stable-baselines3>=2.3,<3",
+  "tensorboard>=2.17,<3",
+  "scipy>=1.13,<2",
+  "networkx>=3.3,<4",
+  "onnx>=1.16,<2",
+  "onnxruntime>=1.18,<2",
+  "onnxscript>=0.1,<1",
+]
 
 [tool.setuptools]
 packages = [
   "ai",
+  "ai.env",
+  "ai.baselines",
+  "ai.core",
+  "ai.gnn",
+  "ai.training",
+  "scripts",
   "simulator",
   "api",
   "api.app",

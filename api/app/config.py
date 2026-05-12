@@ -24,6 +24,7 @@ class Settings:
     )
     jwt_secret: str = os.getenv("JWT_SECRET", "change-me")
     jwt_algorithm: str = os.getenv("JWT_ALGORITHM", "HS256")
+    encryption_key: str = os.getenv("ENCRYPTION_KEY", "uN_v58Z_V7P-v1A8A-v1_V7P-v1A8A-v1_V7P-v1A=")
     access_token_expire_minutes: int = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "480"))
     cors_origins: List[str] = field(
         default_factory=lambda: [
@@ -35,6 +36,20 @@ class Settings:
     utility_rate_inr_per_kwh: float = float(os.getenv("UTILITY_RATE_INR_PER_KWH", "8"))
     net_metering_rate_inr_per_kwh: float = float(os.getenv("NET_METERING_RATE_INR_PER_KWH", "3"))
     dashboard_users: Dict[str, Dict[str, Any]] = field(default_factory=dict)
+    vault_url: str = os.getenv("VAULT_ADDR", "")
+    vault_token: str = os.getenv("VAULT_TOKEN", "")
+    smtp_host: str = os.getenv("SMTP_HOST", "")
+    smtp_port: int = int(os.getenv("SMTP_PORT", "587"))
+    smtp_user: str = os.getenv("SMTP_USER", "")
+    smtp_password: str = os.getenv("SMTP_PASSWORD", "")
+    smtp_from: str = os.getenv("SMTP_FROM", "vayugrid-alerts@example.com")
+    breach_notify_email: str = os.getenv("BREACH_NOTIFY_EMAIL", "")
+    anomaly_contamination: float = float(os.getenv("ANOMALY_CONTAMINATION", "0.05"))
+    anomaly_threshold: float = float(os.getenv("ANOMALY_THRESHOLD", "-0.1"))
+    telemetry_replay_window_seconds: int = int(os.getenv("TELEMETRY_REPLAY_WINDOW_SECONDS", "300"))
+    gnn_checkpoint_path: str = os.getenv(
+        "GNN_CHECKPOINT_PATH", "outputs/checkpoints/vayu_gnn_best.pt"
+    )
 
     def __post_init__(self) -> None:
         self.dashboard_users = _load_users()
